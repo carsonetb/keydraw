@@ -2,6 +2,7 @@ use std::num::NonZero;
 
 use crate::{data::Vertex, state::State};
 
+/// A helper to build an entire `wgpu::RenderPipeline`.
 pub struct PipelineBuilder<'a> {
     name: &'a str,
     layout: &'a wgpu::PipelineLayout,
@@ -12,6 +13,16 @@ pub struct PipelineBuilder<'a> {
 }
 
 impl<'a> PipelineBuilder<'a> {
+    /// Create a new pipeline, given some basic information.
+    /// This automatically sets `primitive` and `multisample` to some defaults,
+    /// these can be overridden via `with_primitive` and `with_multisample`.
+    ///
+    /// # Arguments
+    ///
+    /// * `name`: The name of this pipeline, used in debug and erorr messages.
+    /// * `layout`: The pipeline layout.
+    /// * `vertex`: Description for the vertex shader.
+    /// * `fragment`: Description for the fragment shader.
     pub fn new(
         name: &'a str,
         layout: &'a wgpu::PipelineLayout,
@@ -40,6 +51,7 @@ impl<'a> PipelineBuilder<'a> {
         }
     }
 
+    /// Convert to a `wgpu::RenderPipeline`.
     pub fn resolve(self, state: &State) -> wgpu::RenderPipeline {
         state
             .device
@@ -56,17 +68,21 @@ impl<'a> PipelineBuilder<'a> {
             })
     }
 
+    /// Set a custom `wgpu::PrimitiveState` for the pipeline.
     pub fn with_primitive(&mut self, primitive: wgpu::PrimitiveState) -> &mut Self {
         self.primitive = primitive;
         self
     }
 
+    /// Set a custom `wgpu::MultisampleState` for this pipeline.
     pub fn with_multisample(&mut self, multisample: wgpu::MultisampleState) -> &mut Self {
         self.multisample = multisample;
         self
     }
 }
 
+/// A helper to build a `wgpu::VertexState`. This essentially specifies the
+/// layout of a vertex shader.
 pub struct VertexBuilder<'a> {
     shader: &'a wgpu::ShaderModule,
     entry: &'a str,
@@ -78,6 +94,8 @@ impl<'a> VertexBuilder<'a> {
     const BASIC_ATTRIBUTES: [wgpu::VertexAttribute; 2] =
         wgpu::vertex_attr_array![0 => Float32x3, 1 => Float32x4];
 
+    /// From a shader, create a new `VertexBuilder`, with no buffers and
+    /// default options. The entry point is 'vs_main' by default.
     pub fn new(shader: &'a wgpu::ShaderModule) -> Self {
         Self {
             shader,
@@ -87,6 +105,7 @@ impl<'a> VertexBuilder<'a> {
         }
     }
 
+    /// Convert to a `wgpu::VertexState`.
     pub fn resolve(&'_ self) -> wgpu::VertexState<'_> {
         wgpu::VertexState {
             module: self.shader,
@@ -96,16 +115,21 @@ impl<'a> VertexBuilder<'a> {
         }
     }
 
+    /// Set a custom entry point name. By default this is 'vs_main'.
     pub fn with_entry_point(&mut self, entry: &'a str) -> &mut Self {
         self.entry = entry;
         self
     }
 
+    /// Add a buffer to the vertex shader. You should use the
+    /// `wgpu::vertex_attr_array` macro to create the attributes.
     pub fn with_buffer(&mut self, layout: wgpu::VertexBufferLayout<'a>) -> &mut Self {
         self.buffers.push(layout);
         self
     }
 
+    /// A simple vertex buffer for the builtin `Vertex` struct. Right now this
+    /// is probably required, but hopefully this can be changed in the future.
     pub fn with_simple_vertex_buffer(&mut self) -> &mut Self {
         self.with_buffer(wgpu::VertexBufferLayout {
             array_stride: size_of::<Vertex>() as u64,
@@ -120,6 +144,7 @@ impl<'a> VertexBuilder<'a> {
     }
 }
 
+/// Similar to a `VertexBuilder`, but for fragment shaders.
 pub struct FragmentBuilder<'a> {
     shader: &'a wgpu::ShaderModule,
     entry: &'a str,
@@ -128,6 +153,7 @@ pub struct FragmentBuilder<'a> {
 }
 
 impl<'a> FragmentBuilder<'a> {
+    /// Create from a shader. The default entry point name is 'fs_main'.
     pub fn new(shader: &'a wgpu::ShaderModule) -> Self {
         Self {
             shader,
@@ -137,6 +163,7 @@ impl<'a> FragmentBuilder<'a> {
         }
     }
 
+    /// Convert to a `wgpu::FragmentState`.
     pub fn resolve(&'a self) -> wgpu::FragmentState<'a> {
         wgpu::FragmentState {
             module: &self.shader,
@@ -146,16 +173,21 @@ impl<'a> FragmentBuilder<'a> {
         }
     }
 
+    /// Set a custom entry point name. The default is 'fs_main'.
     pub fn with_entry_point(&mut self, entry: &'a str) -> &mut Self {
         self.entry = entry;
         self
     }
 
+    /// Add a target. This function mirrors the `with_buffer` function for
+    /// `VertexBuilder`.
     pub fn with_target(&mut self, target: wgpu::ColorTargetState) -> &mut Self {
         self.targets.push(Some(target));
         self
     }
 
+    /// Adds a simple target where the color passed replaces whatever color was
+    /// previously on the texture.
     pub fn with_replace_target(&mut self, state: &State) -> &mut Self {
         self.targets.push(Some(wgpu::ColorTargetState {
             format: state.config.format,
@@ -165,6 +197,8 @@ impl<'a> FragmentBuilder<'a> {
         self
     }
 
+    /// Adds a simple target where the color blends with whatever color was
+    /// previously on the texture. This is the recommended target.
     pub fn with_alpha_target(&mut self, state: &State) -> &mut Self {
         self.targets.push(Some(wgpu::ColorTargetState {
             format: state.config.format,
@@ -174,10 +208,7 @@ impl<'a> FragmentBuilder<'a> {
         self
     }
 
-    pub fn with_compilation_options(
-        &mut self,
-        options: wgpu::PipelineCompilationOptions<'a>,
-    ) -> &mut Self {
+    pub fn with_options(&mut self, options: wgpu::PipelineCompilationOptions<'a>) -> &mut Self {
         self.options = options;
         self
     }
