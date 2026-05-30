@@ -1,5 +1,5 @@
 use keydraw::{
-    Command, DrawKey, Event, Program,
+    Command, DrawKey, Event, Program, SimpleCommand,
     builders::{FragmentBuilder, PipelineBuilder, VertexBuilder},
     data::{CameraUniform, Vertex},
     run,
@@ -8,13 +8,13 @@ use keydraw::{
 use wgpu::util::DeviceExt;
 
 struct RectDrawer {
-    command: Command,
+    command: SimpleCommand,
 }
 
 impl RectDrawer {
     fn new(pipeline_id: u32, material_id: u32) -> Self {
         Self {
-            command: Command {
+            command: SimpleCommand {
                 key: DrawKey {
                     z_index: 0,
                     pipeline_id,
@@ -134,11 +134,11 @@ impl Program for Game {
         self.camera_buffer = Some(camera_buffer);
     }
 
-    fn render(&mut self) -> Vec<Command> {
+    fn render(&'_ mut self) -> Vec<Command<'_>> {
         let mut renderer = RectDrawer::new(0, 0);
         renderer.draw(10.0, 10.0, 200.0, 200.0, [1.0, 1.0, 1.0, 0.5]);
         renderer.draw(100.0, 100.0, 200.0, 200.0, [1.0, 1.0, 1.0, 0.5]);
-        vec![renderer.command]
+        vec![Command::Simple(renderer.command)]
     }
 
     fn event(&mut self, event: &Event, state: &mut State) {

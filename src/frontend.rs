@@ -11,7 +11,7 @@ pub trait Program {
     /// Handle other window events, which may modify state.
     fn event(&mut self, event: &Event, state: &mut State);
     /// Here your program may render, by pushing a set of commands.
-    fn render(&mut self) -> Vec<Command>;
+    fn render(&'_ mut self) -> Vec<Command<'_>>;
 }
 
 /// A miscelaneous event that should be handled by the program.
@@ -27,15 +27,31 @@ pub struct DrawKey {
     pub z_index: i32,
     /// The shader this object uses.
     /// Every different shader requires a different pipeline.
+    /// Complex commands may also set this to u32::MAX if they whish to use
+    /// their own pipeline, but the previous one won't be cleared up.
     pub pipeline_id: u32,
     /// Allows sorting by material, aka a bind group, for aded efficiency.
     /// Can be `u32::MAX` to represent nothing.
     pub material_id: u32,
 }
 
+pub enum Command<'a> {
+    Simple(SimpleCommand),
+    Complex(Box<dyn ComplexCommand + 'a>),
+}
+
+impl<'a> Command<'a> {
+    pub fn key(&self) -> DrawKey {
+        match self {
+            Command::Simple(cmd) => cmd.key,
+            Command::Complex(cmd) => cmd.key(),
+        }
+    }
+}
+
 /// Represents a set of similar instances.
 #[derive(Debug)]
-pub struct Command {
+pub struct SimpleCommand {
     /// Sorted by this key.
     pub key: DrawKey,
     /// The vertices for a single instance. The engine heavily relies on
@@ -52,7 +68,7 @@ pub struct Command {
     pub stride: u32,
 }
 
-impl Command {
+impl SimpleCommand {
     /// Gets the number of instances this command will render.
     pub fn instances(&self) -> u32 {
         if self.stride == 0 {
@@ -61,4 +77,10 @@ impl Command {
             self.instances.len() as u32 / self.stride
         }
     }
+}
+
+pub trait ComplexCommand {
+    fn key(&self) -> DrawKey;
+    fn prepare(&mut self, state: &State);
+    fn render<'pass>(&'pass self, pass: &mut wgpu::RenderPass<'pass>);
 }

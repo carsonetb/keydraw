@@ -12,7 +12,7 @@ use wgpu::{
 
 use winit::{event_loop::ActiveEventLoop, keyboard::KeyCode, window::Window};
 
-use crate::{Command, DrawKey, buffer::DynBuffer};
+use crate::{Command, ComplexCommand, DrawKey, buffer::DynBuffer};
 
 pub struct State {
     // High-level window stuff
@@ -166,41 +166,54 @@ impl State {
             });
 
         // Sort and batch commands
-        commands.sort_unstable_by_key(|cmd| cmd.key);
+        commands.sort_unstable_by_key(|cmd| cmd.key());
 
         let mut megaverts = vec![];
         let mut megadices = vec![];
         let mut megainsts = vec![];
 
-        struct BatchRecord {
+        struct SimpleRecord {
             key: DrawKey,
             indices: Range<u32>,
             instances: Range<u32>,
             vertex_begin: u32,
         }
+        enum Record<'a> {
+            Simple(SimpleRecord),
+            Complex(Box<dyn ComplexCommand + 'a>),
+        }
+
         let mut records = Vec::with_capacity(commands.len());
 
         let mut instance = 0;
         let mut vertex = 0;
         for command in commands {
-            let begin = megadices.len() as u32;
-            let num_indices = command.indices.len() as u32;
+            match command {
+                Command::Simple(command) => {
+                    let begin = megadices.len() as u32;
+                    let num_indices = command.indices.len() as u32;
 
-            let num_instances = command.instances();
+                    let num_instances = command.instances();
 
-            records.push(BatchRecord {
-                key: command.key,
-                indices: begin..(begin + num_indices),
-                instances: instance..(instance + num_instances),
-                vertex_begin: vertex,
-            });
+                    records.push(Record::Simple(SimpleRecord {
+                        key: command.key,
+                        indices: begin..(begin + num_indices),
+                        instances: instance..(instance + num_instances),
+                        vertex_begin: vertex,
+                    }));
 
-            megaverts.extend_from_slice(&command.vertices);
-            megadices.extend_from_slice(&command.indices);
-            megainsts.extend_from_slice(&command.instances);
+                    megaverts.extend_from_slice(&command.vertices);
+                    megadices.extend_from_slice(&command.indices);
+                    megainsts.extend_from_slice(&command.instances);
 
-            instance += num_instances;
-            vertex += command.vertices.len() as u32;
+                    instance += num_instances;
+                    vertex += command.vertices.len() as u32;
+                }
+                Command::Complex(mut command) => {
+                    command.prepare(self);
+                    records.push(Record::Complex(command));
+                }
+            }
         }
 
         if megadices.len() % 2 != 0 {
@@ -249,25 +262,44 @@ impl State {
             let mut pipeline_id = None;
             let mut material_id = None;
 
-            for record in records {
-                if pipeline_id != Some(record.key.pipeline_id) {
-                    let pipeline = self.pipeline_db.get(&record.key.pipeline_id).unwrap();
-                    render_pass.set_pipeline(pipeline);
-                    pipeline_id = Some(record.key.pipeline_id);
-                }
+            for record in &records {
+                match record {
+                    Record::Simple(record) => {
+                        if pipeline_id != Some(record.key.pipeline_id) {
+                            let pipeline = self.pipeline_db.get(&record.key.pipeline_id).unwrap();
+                            render_pass.set_pipeline(pipeline);
+                            pipeline_id = Some(record.key.pipeline_id);
+                        }
 
-                if record.key.material_id != u32::MAX && material_id != Some(record.key.material_id)
-                {
-                    let material = self.material_db.get(&record.key.material_id).unwrap();
-                    render_pass.set_bind_group(0, material, &[]);
-                    material_id = Some(record.key.material_id);
-                }
+                        if record.key.material_id != u32::MAX
+                            && material_id != Some(record.key.material_id)
+                        {
+                            let material = self.material_db.get(&record.key.material_id).unwrap();
+                            render_pass.set_bind_group(0, material, &[]);
+                            material_id = Some(record.key.material_id);
+                        }
 
-                render_pass.draw_indexed(
-                    record.indices,
-                    record.vertex_begin as i32,
-                    record.instances,
-                );
+                        // Clones are alright here, these are just ranges.
+                        render_pass.draw_indexed(
+                            record.indices.clone(),
+                            record.vertex_begin as i32,
+                            record.instances.clone(),
+                        );
+                    }
+                    Record::Complex(complex) => {
+                        complex.render(&mut render_pass);
+
+                        // Reset all these things which the command probably messed up.
+                        render_pass.set_vertex_buffer(0, self.vertex_buffer.buffer.slice(..));
+                        render_pass.set_vertex_buffer(1, self.instance_buffer.buffer.slice(..));
+                        render_pass.set_index_buffer(
+                            self.index_buffer.buffer.slice(..),
+                            IndexFormat::Uint16,
+                        );
+                        pipeline_id = None;
+                        material_id = None;
+                    }
+                }
             }
         }
 

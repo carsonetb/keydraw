@@ -1,5 +1,5 @@
 use keydraw::{
-    Command, DrawKey, Event, Program,
+    Command, DrawKey, Event, Program, SimpleCommand,
     builders::{BindGroupLayoutEntryBuilder, FragmentBuilder, PipelineBuilder, VertexBuilder},
     data::{CameraUniform, Vertex},
     run,
@@ -60,8 +60,8 @@ impl Program for Game {
         self.camera_buffer = Some(camera_buffer);
     }
 
-    fn render(&mut self) -> Vec<Command> {
-        vec![Command {
+    fn render(&'_ mut self) -> Vec<Command<'_>> {
+        vec![Command::Simple(SimpleCommand {
             key: DrawKey {
                 z_index: 0,
                 pipeline_id: 0,
@@ -84,7 +84,7 @@ impl Program for Game {
             indices: vec![0, 1, 2],
             instances: vec![],
             stride: 0,
-        }]
+        })]
     }
 
     fn event(&mut self, event: &Event, state: &mut State) {
