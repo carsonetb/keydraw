@@ -1,5 +1,6 @@
 use graphics_wgpu::{
     Command, DrawKey, Event, Program,
+    builders::{FragmentBuilder, PipelineBuilder, VertexBuilder},
     data::{CameraUniform, Vertex},
     run,
     state::State,
@@ -112,56 +113,20 @@ impl Program for Game {
                     bind_group_layouts: &[&camera_bind_group_layout],
                     immediate_size: 0,
                 });
-        let pipeline = state
-            .device
-            .create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-                label: Some("Render Pipeline"),
-                layout: Some(&render_pipeline_layout),
-                vertex: wgpu::VertexState {
-                    module: &shader,
-                    entry_point: Some("vs_main"),
-                    buffers: &[
-                        wgpu::VertexBufferLayout {
-                            array_stride: size_of::<Vertex>() as u64,
-                            step_mode: wgpu::VertexStepMode::Vertex,
-                            attributes: &wgpu::vertex_attr_array![0 => Float32x3, 1 => Float32x4],
-                        },
-                        wgpu::VertexBufferLayout {
-                            array_stride: size_of::<f32>() as u64 * 8,
-                            step_mode: wgpu::VertexStepMode::Instance,
-                            attributes: &wgpu::vertex_attr_array![2 => Float32x4, 3 => Float32x4],
-                        },
-                    ],
-                    compilation_options: wgpu::PipelineCompilationOptions::default(),
-                },
-                fragment: Some(wgpu::FragmentState {
-                    module: &shader,
-                    entry_point: Some("fs_main"),
-                    targets: &[Some(wgpu::ColorTargetState {
-                        format: state.config.format,
-                        blend: Some(wgpu::BlendState::ALPHA_BLENDING),
-                        write_mask: wgpu::ColorWrites::ALL,
-                    })],
-                    compilation_options: wgpu::PipelineCompilationOptions::default(),
+
+        let pipeline = PipelineBuilder::new(
+            "Render Pipeline",
+            &render_pipeline_layout,
+            &VertexBuilder::new(&shader)
+                .with_simple_vertex_buffer()
+                .with_buffer(wgpu::VertexBufferLayout {
+                    array_stride: size_of::<f32>() as u64 * 8,
+                    step_mode: wgpu::VertexStepMode::Instance,
+                    attributes: &wgpu::vertex_attr_array![2 => Float32x4, 3 => Float32x4],
                 }),
-                primitive: wgpu::PrimitiveState {
-                    topology: wgpu::PrimitiveTopology::TriangleList,
-                    strip_index_format: None,
-                    front_face: wgpu::FrontFace::Ccw,
-                    cull_mode: Some(wgpu::Face::Back),
-                    polygon_mode: wgpu::PolygonMode::Fill,
-                    unclipped_depth: false,
-                    conservative: false,
-                },
-                depth_stencil: None,
-                multisample: wgpu::MultisampleState {
-                    count: 1,
-                    mask: !0,
-                    alpha_to_coverage_enabled: false,
-                },
-                multiview_mask: None,
-                cache: None,
-            });
+            &FragmentBuilder::new(&shader).with_alpha_target(state),
+        )
+        .resolve(state);
 
         state.pipeline_db.insert(0, pipeline);
         state.material_db.insert(0, material);

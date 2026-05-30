@@ -7,6 +7,7 @@ use wgpu::{
     Operations, PowerPreference, PresentMode, Queue, RenderPassColorAttachment,
     RenderPassDescriptor, RenderPipeline, RequestAdapterOptions, StoreOp, Surface,
     SurfaceConfiguration, SurfaceError, TextureUsages, TextureViewDescriptor, Trace,
+    util::DeviceExt,
 };
 
 use winit::{event_loop::ActiveEventLoop, keyboard::KeyCode, window::Window};
@@ -281,5 +282,40 @@ impl State {
             (KeyCode::Escape, true) => event_loop.exit(),
             _ => {}
         }
+    }
+
+    // From here on out are helper functions
+    pub fn create_simple_layout(
+        &self,
+        name: &str,
+        layouts: &[&wgpu::BindGroupLayout],
+    ) -> wgpu::PipelineLayout {
+        self.device
+            .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+                label: Some(&name.to_string()),
+                bind_group_layouts: layouts,
+                immediate_size: 0,
+            })
+    }
+
+    pub fn create_uniform_buffer(&self, label: &str, contents: &[u8]) -> wgpu::Buffer {
+        self.device
+            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some(label),
+                contents,
+                usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+            })
+    }
+
+    pub fn create_bind_group_layout(
+        &self,
+        label: &str,
+        entries: &[wgpu::BindGroupLayoutEntry],
+    ) -> wgpu::BindGroupLayout {
+        self.device
+            .create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                entries,
+                label: Some(label),
+            })
     }
 }

@@ -5,6 +5,7 @@ use winit::event_loop::EventLoop;
 
 mod app;
 mod buffer;
+pub mod builders;
 pub mod data;
 mod frontend;
 pub mod state;
