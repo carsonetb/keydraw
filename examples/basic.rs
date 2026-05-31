@@ -62,11 +62,7 @@ impl Program for Game {
 
     fn render(&'_ mut self) -> Vec<Command<'_>> {
         vec![Command::Simple(SimpleCommand {
-            key: DrawKey {
-                z_index: 0,
-                pipeline_id: 0,
-                material_id: 0,
-            },
+            key: DrawKey::new(0, 0, &[0]),
             vertices: vec![
                 Vertex {
                     position: [200.0, 100.0, 0.0],

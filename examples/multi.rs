@@ -15,11 +15,7 @@ impl RectDrawer {
     fn new(pipeline_id: u32, material_id: u32) -> Self {
         Self {
             command: SimpleCommand {
-                key: DrawKey {
-                    z_index: 0,
-                    pipeline_id,
-                    material_id,
-                },
+                key: DrawKey::new(0, pipeline_id, &[material_id]),
                 vertices: vec![
                     Vertex {
                         position: [0.0, 0.0, 0.0],
@@ -153,11 +149,7 @@ impl Program for Game {
         vec![
             Command::Simple(renderer.command),
             Command::Simple(SimpleCommand {
-                key: DrawKey {
-                    z_index: 0,
-                    pipeline_id: 1,
-                    material_id: 0,
-                },
+                key: DrawKey::new(0, 1, &[0]),
                 vertices: vec![
                     Vertex {
                         position: [200.0, 100.0, 0.0],

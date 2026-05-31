@@ -266,7 +266,7 @@ impl State {
             render_pass.set_index_buffer(self.index_buffer.buffer.slice(..), IndexFormat::Uint16);
 
             let mut pipeline_id = None;
-            let mut material_id = None;
+            let mut material_ids = [u32::MAX; 4];
 
             for record in &records {
                 match record {
@@ -277,12 +277,14 @@ impl State {
                             pipeline_id = Some(record.key.pipeline_id);
                         }
 
-                        if record.key.material_id != u32::MAX
-                            && material_id != Some(record.key.material_id)
-                        {
-                            let material = self.material_db.get(&record.key.material_id).unwrap();
-                            render_pass.set_bind_group(0, material, &[]);
-                            material_id = Some(record.key.material_id);
+                        for i in 0..4 {
+                            let target_material = record.key.material_ids[i];
+
+                            if target_material != u32::MAX && material_ids[i] != target_material {
+                                let material = self.material_db.get(&target_material).unwrap();
+                                render_pass.set_bind_group(i as u32, material, &[]);
+                                material_ids[i] = target_material;
+                            }
                         }
 
                         render_pass.set_vertex_buffer(
@@ -310,7 +312,7 @@ impl State {
                             IndexFormat::Uint16,
                         );
                         pipeline_id = None;
-                        material_id = None;
+                        material_ids = [u32::MAX; 4];
                     }
                 }
             }

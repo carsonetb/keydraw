@@ -32,7 +32,23 @@ pub struct DrawKey {
     pub pipeline_id: u32,
     /// Allows sorting by material, aka a bind group, for aded efficiency.
     /// Can be `u32::MAX` to represent nothing.
-    pub material_id: u32,
+    /// Up to four materials may be used.
+    pub material_ids: [u32; 4],
+}
+
+impl DrawKey {
+    /// Create a new [`DrawKey`]. You may not use more than four groups.
+    pub fn new(z_index: i32, pipeline_id: u32, groups: &[u32]) -> Self {
+        let mut bind_groups = [u32::MAX; 4];
+        for (i, &g) in groups.iter().enumerate().take(4) {
+            bind_groups[i] = g;
+        }
+        Self {
+            z_index,
+            pipeline_id,
+            material_ids: bind_groups,
+        }
+    }
 }
 
 pub enum Command<'a> {

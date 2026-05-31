@@ -1,3 +1,5 @@
+use std::u32;
+
 use keydraw::{Command, ComplexCommand, DrawKey, Event, Program, run, state::State};
 
 struct GlyphonCommand<'a> {
@@ -12,11 +14,7 @@ struct GlyphonCommand<'a> {
 
 impl<'a> ComplexCommand for GlyphonCommand<'a> {
     fn key(&self) -> DrawKey {
-        DrawKey {
-            z_index: self.z_index,
-            pipeline_id: u32::MAX,
-            material_id: u32::MAX,
-        }
+        DrawKey::new(self.z_index, u32::MAX, &[])
     }
 
     fn prepare(&mut self, state: &State) {
