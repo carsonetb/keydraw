@@ -50,13 +50,19 @@ impl RectDrawer {
 }
 
 struct Game {
-    pub camera_buffer: Option<wgpu::Buffer>,
+    camera_buffer: Option<wgpu::Buffer>,
+    rect_pipeline_index: u32,
+    tri_pipeline_index: u32,
+    material_index: u32,
 }
 
 impl Game {
     fn new() -> Self {
         Self {
             camera_buffer: None,
+            rect_pipeline_index: u32::MAX,
+            tri_pipeline_index: u32::MAX,
+            material_index: u32::MAX,
         }
     }
 }
@@ -135,21 +141,28 @@ impl Program for Game {
         )
         .resolve(state);
 
-        state.pipeline_db.insert(0, rect_pipeline);
-        state.pipeline_db.insert(1, tri_pipeline);
-        state.material_db.insert(0, material);
+        self.rect_pipeline_index = state.get_pipeline();
+        self.tri_pipeline_index = state.get_pipeline();
+        self.material_index = state.get_material();
+        state
+            .pipeline_db
+            .insert(self.rect_pipeline_index, rect_pipeline);
+        state
+            .pipeline_db
+            .insert(self.tri_pipeline_index, tri_pipeline);
+        state.material_db.insert(self.material_index, material);
 
         self.camera_buffer = Some(camera_buffer);
     }
 
     fn render(&'_ mut self) -> Vec<Command<'_>> {
-        let mut renderer = RectDrawer::new(0, 0);
+        let mut renderer = RectDrawer::new(self.rect_pipeline_index, self.material_index);
         renderer.draw(10.0, 10.0, 200.0, 200.0, [1.0, 1.0, 1.0, 0.5]);
         renderer.draw(100.0, 100.0, 200.0, 200.0, [1.0, 1.0, 1.0, 0.5]);
         vec![
             Command::Simple(renderer.command),
             Command::Simple(SimpleCommand {
-                key: DrawKey::new(0, 1, &[0]),
+                key: DrawKey::new(0, self.tri_pipeline_index, &[self.material_index]),
                 vertices: vec![
                     Vertex {
                         position: [200.0, 100.0, 0.0],

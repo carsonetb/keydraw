@@ -7,13 +7,17 @@ use keydraw::{
 };
 
 struct Game {
-    pub camera_buffer: Option<wgpu::Buffer>,
+    camera_buffer: Option<wgpu::Buffer>,
+    pipeline_index: u32,
+    material_index: u32,
 }
 
 impl Game {
     fn new() -> Self {
         Self {
             camera_buffer: None,
+            pipeline_index: u32::MAX,
+            material_index: u32::MAX,
         }
     }
 }
@@ -54,15 +58,17 @@ impl Program for Game {
         )
         .resolve(state);
 
-        state.pipeline_db.insert(0, pipeline);
-        state.material_db.insert(0, material);
+        self.pipeline_index = state.get_pipeline();
+        self.material_index = state.get_material();
+        state.pipeline_db.insert(self.pipeline_index, pipeline);
+        state.material_db.insert(self.material_index, material);
 
         self.camera_buffer = Some(camera_buffer);
     }
 
     fn render(&'_ mut self) -> Vec<Command<'_>> {
         vec![Command::Simple(SimpleCommand {
-            key: DrawKey::new(0, 0, &[0]),
+            key: DrawKey::new(0, self.pipeline_index, &[self.material_index]),
             vertices: vec![
                 Vertex {
                     position: [200.0, 100.0, 0.0],

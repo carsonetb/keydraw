@@ -30,7 +30,9 @@ pub struct State {
 
     // Pipeline and materials
     pub pipeline_db: HashMap<u32, RenderPipeline>,
+    pipeline_index: u32,
     pub material_db: HashMap<u32, wgpu::BindGroup>,
+    material_index: u32,
 }
 
 impl State {
@@ -117,7 +119,9 @@ impl State {
             index_buffer,
             instance_buffer,
             pipeline_db: HashMap::new(),
+            pipeline_index: 0,
             material_db: HashMap::new(),
+            material_index: 0,
         })
     }
 
@@ -329,6 +333,18 @@ impl State {
             (KeyCode::Escape, true) => event_loop.exit(),
             _ => {}
         }
+    }
+
+    pub fn get_pipeline(&mut self) -> u32 {
+        let out = self.pipeline_index;
+        self.pipeline_index += 1;
+        out
+    }
+
+    pub fn get_material(&mut self) -> u32 {
+        let out = self.material_index;
+        self.material_index += 1;
+        out
     }
 
     // From here on out are helper functions
