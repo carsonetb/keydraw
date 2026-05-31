@@ -175,8 +175,10 @@ impl State {
         struct SimpleRecord {
             key: DrawKey,
             indices: Range<u32>,
-            instances: Range<u32>,
             vertex_begin: u32,
+            instances: Range<u32>,
+            instances_bytes: Range<wgpu::BufferAddress>,
+            num_instances: u32,
         }
         enum Record<'a> {
             Simple(SimpleRecord),
@@ -193,12 +195,17 @@ impl State {
                     let begin = megadices.len() as u32;
                     let num_indices = command.indices.len() as u32;
 
+                    let byte_begin = megainsts.len() as wgpu::BufferAddress;
+                    let byte_end =
+                        byte_begin + command.instances.len().max(1) as wgpu::BufferAddress;
                     let num_instances = command.instances();
 
                     records.push(Record::Simple(SimpleRecord {
                         key: command.key,
                         indices: begin..(begin + num_indices),
                         instances: instance..(instance + num_instances),
+                        instances_bytes: byte_begin..byte_end,
+                        num_instances,
                         vertex_begin: vertex,
                     }));
 
@@ -256,7 +263,6 @@ impl State {
             });
 
             render_pass.set_vertex_buffer(0, self.vertex_buffer.buffer.slice(..));
-            render_pass.set_vertex_buffer(1, self.instance_buffer.buffer.slice(..));
             render_pass.set_index_buffer(self.index_buffer.buffer.slice(..), IndexFormat::Uint16);
 
             let mut pipeline_id = None;
@@ -279,11 +285,18 @@ impl State {
                             material_id = Some(record.key.material_id);
                         }
 
+                        render_pass.set_vertex_buffer(
+                            1,
+                            self.instance_buffer
+                                .buffer
+                                .slice(record.instances_bytes.clone()),
+                        );
+
                         // Clones are alright here, these are just ranges.
                         render_pass.draw_indexed(
                             record.indices.clone(),
                             record.vertex_begin as i32,
-                            record.instances.clone(),
+                            0..record.num_instances,
                         );
                     }
                     Record::Complex(complex) => {
