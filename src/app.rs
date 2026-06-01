@@ -140,4 +140,26 @@ impl ApplicationHandler<State> for Engine {
             _ => (),
         }
     }
+
+    fn device_event(
+        &mut self,
+        _event_loop: &ActiveEventLoop,
+        _device_id: winit::event::DeviceId,
+        event: winit::event::DeviceEvent,
+    ) {
+        let state = match &mut self.state {
+            Some(state) => state,
+            None => return,
+        };
+
+        self.program.device_event(&event, state);
+    }
+
+    fn new_events(&mut self, _event_loop: &ActiveEventLoop, _cause: winit::event::StartCause) {
+        self.program.new_events();
+    }
+
+    fn about_to_wait(&mut self, _event_loop: &ActiveEventLoop) {
+        self.program.about_to_wait();
+    }
 }

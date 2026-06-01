@@ -7,11 +7,30 @@ pub trait Program {
     ///
     /// Currently, you are responsible for building the `wgpu` `RenderPipeline`s
     /// and `Texture`s yourself.
-    fn init(&mut self, state: &mut State);
+    fn init(&mut self, state: &mut State) {
+        let _ = state;
+    }
+
     /// Handle other window events, which may modify state.
-    fn event(&mut self, event: &winit::event::WindowEvent, state: &mut State);
+    fn event(&mut self, event: &winit::event::WindowEvent, state: &mut State) {
+        let _ = (event, state);
+    }
+
+    // Handle other device events.
+    fn device_event(&mut self, device_event: &winit::event::DeviceEvent, state: &mut State) {
+        let _ = (device_event, state);
+    }
+
     /// Here your program may render, by pushing a set of commands.
-    fn render(&'_ mut self) -> Vec<Command<'_>>;
+    fn render(&'_ mut self) -> Vec<Command<'_>> {
+        vec![]
+    }
+
+    /// Passed on from the [`winit`] event.
+    fn new_events(&mut self) {}
+
+    /// Passed on from the [`winit`] event.
+    fn about_to_wait(&mut self) {}
 }
 
 /// Aids in the sorting of `Command`s.
