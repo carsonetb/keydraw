@@ -66,7 +66,7 @@ impl Program for Game {
         self.camera_buffer = Some(camera_buffer);
     }
 
-    fn render(&'_ mut self) -> Vec<Command<'_>> {
+    fn render(&'_ mut self, _state: &mut State) -> Vec<Command<'_>> {
         vec![Command::Simple(SimpleCommand {
             key: DrawKey::new(0, self.pipeline_index, &[self.material_index]),
             vertices: vec![

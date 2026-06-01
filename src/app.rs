@@ -118,7 +118,7 @@ impl ApplicationHandler<State> for Engine {
             WindowEvent::RedrawRequested => {
                 state.update();
 
-                let commands = self.program.render();
+                let commands = self.program.render(state);
 
                 match state.render(commands) {
                     Ok(_) => (),
@@ -156,10 +156,20 @@ impl ApplicationHandler<State> for Engine {
     }
 
     fn new_events(&mut self, _event_loop: &ActiveEventLoop, _cause: winit::event::StartCause) {
-        self.program.new_events();
+        let state = match &mut self.state {
+            Some(state) => state,
+            None => return,
+        };
+
+        self.program.new_events(state);
     }
 
     fn about_to_wait(&mut self, _event_loop: &ActiveEventLoop) {
-        self.program.about_to_wait();
+        let state = match &mut self.state {
+            Some(state) => state,
+            None => return,
+        };
+
+        self.program.about_to_wait(state);
     }
 }

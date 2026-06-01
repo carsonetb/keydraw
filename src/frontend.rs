@@ -22,15 +22,20 @@ pub trait Program {
     }
 
     /// Here your program may render, by pushing a set of commands.
-    fn render(&'_ mut self) -> Vec<Command<'_>> {
+    fn render(&'_ mut self, state: &mut State) -> Vec<Command<'_>> {
+        let _ = state;
         vec![]
     }
 
     /// Passed on from the [`winit`] event.
-    fn new_events(&mut self) {}
+    fn new_events(&mut self, state: &mut State) {
+        let _ = state;
+    }
 
     /// Passed on from the [`winit`] event.
-    fn about_to_wait(&mut self) {}
+    fn about_to_wait(&mut self, state: &mut State) {
+        let _ = state;
+    }
 }
 
 /// Aids in the sorting of `Command`s.

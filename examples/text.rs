@@ -129,7 +129,7 @@ impl Program for Game {
         self.text_buffer = Some(text_buffer);
     }
 
-    fn render(&'_ mut self) -> Vec<Command<'_>> {
+    fn render(&'_ mut self, _state: &mut State) -> Vec<Command<'_>> {
         vec![Command::Complex(Box::new(GlyphonCommand {
             z_index: 0,
             font_system: self.font_system.as_mut().unwrap(),

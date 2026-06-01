@@ -155,7 +155,7 @@ impl Program for Game {
         self.camera_buffer = Some(camera_buffer);
     }
 
-    fn render(&'_ mut self) -> Vec<Command<'_>> {
+    fn render(&'_ mut self, _state: &mut State) -> Vec<Command<'_>> {
         let mut renderer = RectDrawer::new(self.rect_pipeline_index, self.material_index);
         renderer.draw(10.0, 10.0, 200.0, 200.0, [1.0, 1.0, 1.0, 0.5]);
         renderer.draw(100.0, 100.0, 200.0, 200.0, [1.0, 1.0, 1.0, 0.5]);
