@@ -10,7 +10,7 @@ use winit::{
     window::Window,
 };
 
-use crate::{Event, Program, state::State};
+use crate::{Program, state::State};
 
 pub struct Engine {
     #[cfg(target_arch = "wasm32")]
@@ -108,12 +108,12 @@ impl ApplicationHandler<State> for Engine {
             None => return,
         };
 
+        self.program.event(&event, state);
+
         match event {
             WindowEvent::CloseRequested => event_loop.exit(),
             WindowEvent::Resized(size) => {
                 state.resize(size.width, size.height);
-                self.program
-                    .event(&Event::Resize(size.width, size.height), state);
             }
             WindowEvent::RedrawRequested => {
                 state.update();

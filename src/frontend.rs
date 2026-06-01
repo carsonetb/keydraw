@@ -9,16 +9,9 @@ pub trait Program {
     /// and `Texture`s yourself.
     fn init(&mut self, state: &mut State);
     /// Handle other window events, which may modify state.
-    fn event(&mut self, event: &Event, state: &mut State);
+    fn event(&mut self, event: &winit::event::WindowEvent, state: &mut State);
     /// Here your program may render, by pushing a set of commands.
     fn render(&'_ mut self) -> Vec<Command<'_>>;
-}
-
-/// A miscelaneous event that should be handled by the program.
-pub enum Event {
-    /// Emitted when the window is resized. Contains the new width and height
-    /// of the window.
-    Resize(u32, u32),
 }
 
 /// Aids in the sorting of `Command`s.

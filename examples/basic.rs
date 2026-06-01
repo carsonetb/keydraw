@@ -1,5 +1,5 @@
 use keydraw::{
-    Command, DrawKey, Event, Program, SimpleCommand,
+    Command, DrawKey, Program, SimpleCommand,
     builders::{BindGroupLayoutEntryBuilder, FragmentBuilder, PipelineBuilder, VertexBuilder},
     data::{CameraUniform, Vertex},
     run,
@@ -89,9 +89,9 @@ impl Program for Game {
         })]
     }
 
-    fn event(&mut self, event: &Event, state: &mut State) {
+    fn event(&mut self, event: &winit::event::WindowEvent, state: &mut State) {
         match event {
-            Event::Resize(width, height) => {
+            winit::event::WindowEvent::Resized(winit::dpi::PhysicalSize { width, height }) => {
                 let camera = CameraUniform::new(*width as f32, *height as f32);
                 state.queue.write_buffer(
                     &self.camera_buffer.as_ref().unwrap(),
@@ -99,6 +99,7 @@ impl Program for Game {
                     &bytemuck::cast_slice(&[camera]),
                 );
             }
+            _ => (),
         }
     }
 }

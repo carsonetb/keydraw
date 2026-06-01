@@ -1,6 +1,6 @@
 use std::u32;
 
-use keydraw::{Command, ComplexCommand, DrawKey, Event, Program, run, state::State};
+use keydraw::{Command, ComplexCommand, DrawKey, Program, run, state::State};
 
 struct GlyphonCommand<'a> {
     z_index: i32,
@@ -141,9 +141,9 @@ impl Program for Game {
         }))]
     }
 
-    fn event(&mut self, event: &Event, state: &mut State) {
+    fn event(&mut self, event: &winit::event::WindowEvent, state: &mut State) {
         match event {
-            Event::Resize(width, height) => {
+            winit::event::WindowEvent::Resized(winit::dpi::PhysicalSize { width, height }) => {
                 self.viewport.as_mut().unwrap().update(
                     &state.queue,
                     glyphon::Resolution {
@@ -152,6 +152,7 @@ impl Program for Game {
                     },
                 );
             }
+            _ => (),
         }
     }
 }
