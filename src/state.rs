@@ -87,7 +87,7 @@ impl State {
             format: surface_format,
             width: size.width,
             height: size.height,
-            present_mode: PresentMode::Fifo,
+            present_mode: PresentMode::Immediate,
             alpha_mode: surface_caps.alpha_modes[0],
             view_formats: vec![],
             desired_maximum_frame_latency: 2,
@@ -125,6 +125,14 @@ impl State {
             material_db: HashMap::new(),
             material_index: 0,
         })
+    }
+
+    pub fn enable_vsync(&mut self) {
+        self.config.present_mode = PresentMode::AutoVsync;
+    }
+
+    pub fn disable_vsync(&mut self) {
+        self.config.present_mode = PresentMode::Immediate;
     }
 
     pub fn resize(&mut self, width: u32, height: u32) {
