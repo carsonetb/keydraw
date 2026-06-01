@@ -2,7 +2,7 @@ use std::{collections::HashMap, ops::Range, sync::Arc};
 
 use anyhow::Ok;
 use wgpu::{
-    Backends, BufferUsages, Color, CommandEncoderDescriptor, Device, DeviceDescriptor,
+    Backends, BufferUsages, CommandEncoderDescriptor, Device, DeviceDescriptor,
     ExperimentalFeatures, Features, IndexFormat, Instance, InstanceDescriptor, Limits, LoadOp,
     Operations, PowerPreference, PresentMode, Queue, RenderPassColorAttachment,
     RenderPassDescriptor, RenderPipeline, RequestAdapterOptions, StoreOp, Surface,
@@ -22,6 +22,7 @@ pub struct State {
     pub config: wgpu::SurfaceConfiguration,
     is_surface_configured: bool,
     pub window: Arc<Window>,
+    pub clear_color: wgpu::Color,
 
     // Buffers
     vertex_buffer: DynBuffer,
@@ -115,6 +116,7 @@ impl State {
             queue,
             config,
             window,
+            clear_color: wgpu::Color::BLACK,
             vertex_buffer,
             index_buffer,
             instance_buffer,
@@ -180,7 +182,6 @@ impl State {
             key: DrawKey,
             indices: Range<u32>,
             vertex_begin: u32,
-            instances: Range<u32>,
             instances_bytes: Range<wgpu::BufferAddress>,
             num_instances: u32,
         }
@@ -191,7 +192,6 @@ impl State {
 
         let mut records = Vec::with_capacity(commands.len());
 
-        let mut instance = 0;
         let mut vertex = 0;
         for command in commands {
             match command {
@@ -207,7 +207,6 @@ impl State {
                     records.push(Record::Simple(SimpleRecord {
                         key: command.key,
                         indices: begin..(begin + num_indices),
-                        instances: instance..(instance + num_instances),
                         instances_bytes: byte_begin..byte_end,
                         num_instances,
                         vertex_begin: vertex,
@@ -217,7 +216,6 @@ impl State {
                     megadices.extend_from_slice(&command.indices);
                     megainsts.extend_from_slice(&command.instances);
 
-                    instance += num_instances;
                     vertex += command.vertices.len() as u32;
                 }
                 Command::Complex(mut command) => {
@@ -251,12 +249,7 @@ impl State {
                     resolve_target: None,
                     depth_slice: None,
                     ops: Operations {
-                        load: LoadOp::Clear(Color {
-                            r: 0.1,
-                            g: 0.2,
-                            b: 0.3,
-                            a: 1.0,
-                        }),
+                        load: LoadOp::Clear(self.clear_color),
                         store: StoreOp::Store,
                     },
                 })],
