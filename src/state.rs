@@ -42,7 +42,7 @@ impl State {
 
         let instance = Instance::new(&InstanceDescriptor {
             #[cfg(not(target_arch = "wasm32"))]
-            backends: Backends::VULKAN,
+            backends: Backends::PRIMARY,
             #[cfg(target_arch = "wasm32")]
             backends: Backends::GL,
             flags: Default::default(),
