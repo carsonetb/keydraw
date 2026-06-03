@@ -42,7 +42,7 @@ impl State {
 
         let instance = Instance::new(&InstanceDescriptor {
             #[cfg(not(target_arch = "wasm32"))]
-            backends: Backends::PRIMARY,
+            backends: Backends::all(),
             #[cfg(target_arch = "wasm32")]
             backends: Backends::GL,
             flags: Default::default(),
@@ -87,7 +87,7 @@ impl State {
             format: surface_format,
             width: size.width,
             height: size.height,
-            present_mode: PresentMode::Immediate,
+            present_mode: PresentMode::AutoVsync,
             alpha_mode: surface_caps.alpha_modes[0],
             view_formats: vec![],
             desired_maximum_frame_latency: 2,
