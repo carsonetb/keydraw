@@ -110,7 +110,7 @@ impl Program for Game {
                 .device
                 .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                     label: Some("Render Pipeline Layout"),
-                    bind_group_layouts: &[&camera_bind_group_layout],
+                    bind_group_layouts: &[Some(&camera_bind_group_layout)],
                     immediate_size: 0,
                 });
 

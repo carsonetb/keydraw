@@ -48,7 +48,7 @@ impl Program for Game {
         });
 
         let render_pipeline_layout =
-            state.create_simple_layout("Render Pipeline", &[&camera_bind_group_layout]);
+            state.create_simple_layout("Render Pipeline", &[Some(&camera_bind_group_layout)]);
 
         let pipeline = PipelineBuilder::new(
             "Render Pipeline",

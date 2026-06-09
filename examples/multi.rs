@@ -107,7 +107,7 @@ impl Program for Game {
             .device
             .create_shader_module(wgpu::include_wgsl!("basic.wgsl"));
         let tri_pipeline_layout =
-            state.create_simple_layout("Render Pipeline", &[&camera_bind_group_layout]);
+            state.create_simple_layout("Render Pipeline", &[Some(&camera_bind_group_layout)]);
         let tri_pipeline = PipelineBuilder::new(
             "Render Pipeline",
             &tri_pipeline_layout,
@@ -124,7 +124,7 @@ impl Program for Game {
                 .device
                 .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                     label: Some("Render Pipeline Layout"),
-                    bind_group_layouts: &[&camera_bind_group_layout],
+                    bind_group_layouts: &[Some(&camera_bind_group_layout)],
                     immediate_size: 0,
                 });
         let rect_pipeline = PipelineBuilder::new(

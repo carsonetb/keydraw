@@ -2,15 +2,18 @@ use std::{collections::HashMap, ops::Range, sync::Arc};
 
 use anyhow::Ok;
 use wgpu::{
-    Backends, BufferUsages, CommandEncoderDescriptor, Device, DeviceDescriptor,
-    ExperimentalFeatures, Features, IndexFormat, Instance, InstanceDescriptor, Limits, LoadOp,
-    Operations, PowerPreference, PresentMode, Queue, RenderPassColorAttachment,
+    Backends, BufferUsages, CommandEncoderDescriptor, CurrentSurfaceTexture, Device,
+    DeviceDescriptor, ExperimentalFeatures, Features, IndexFormat, Instance, InstanceDescriptor,
+    Limits, LoadOp, Operations, PowerPreference, PresentMode, Queue, RenderPassColorAttachment,
     RenderPassDescriptor, RenderPipeline, RequestAdapterOptions, StoreOp, Surface,
-    SurfaceConfiguration, SurfaceError, TextureUsages, TextureViewDescriptor, Trace,
-    util::DeviceExt,
+    SurfaceConfiguration, TextureUsages, TextureViewDescriptor, Trace, util::DeviceExt,
 };
 
-use winit::{event_loop::ActiveEventLoop, keyboard::KeyCode, window::Window};
+use winit::{
+    event_loop::{ActiveEventLoop, OwnedDisplayHandle},
+    keyboard::KeyCode,
+    window::Window,
+};
 
 use crate::{Command, ComplexCommand, DrawKey, buffer::DynBuffer};
 
@@ -37,10 +40,10 @@ pub struct State {
 }
 
 impl State {
-    pub async fn new(window: Arc<Window>) -> anyhow::Result<Self> {
+    pub async fn new(window: Arc<Window>, handle: OwnedDisplayHandle) -> anyhow::Result<Self> {
         let size = window.inner_size();
 
-        let instance = Instance::new(&InstanceDescriptor {
+        let instance = Instance::new(InstanceDescriptor {
             #[cfg(not(target_arch = "wasm32"))]
             backends: Backends::all(),
             #[cfg(target_arch = "wasm32")]
@@ -48,6 +51,7 @@ impl State {
             flags: Default::default(),
             memory_budget_thresholds: Default::default(),
             backend_options: Default::default(),
+            display: Some(Box::new(handle)),
         });
 
         let surface = instance.create_surface(window.clone()).unwrap();
@@ -154,19 +158,23 @@ impl State {
         }
 
         let output = match self.surface.get_current_texture() {
-            std::result::Result::Ok(texture) => texture,
-            Err(e) => match e {
-                SurfaceError::Timeout | SurfaceError::OutOfMemory | SurfaceError::Other => {
-                    return Ok(());
-                }
-                SurfaceError::Outdated => {
-                    self.surface.configure(&self.device, &self.config);
-                    return Ok(());
-                }
-                SurfaceError::Lost => {
-                    anyhow::bail!("Lost device.");
-                }
-            },
+            CurrentSurfaceTexture::Success(texture) => texture,
+            CurrentSurfaceTexture::Suboptimal(texture) => {
+                self.surface.configure(&self.device, &self.config);
+                texture
+            }
+            CurrentSurfaceTexture::Timeout
+            | CurrentSurfaceTexture::Occluded
+            | CurrentSurfaceTexture::Validation => {
+                return Ok(());
+            }
+            CurrentSurfaceTexture::Outdated => {
+                self.surface.configure(&self.device, &self.config);
+                return Ok(());
+            }
+            CurrentSurfaceTexture::Lost => {
+                anyhow::bail!("Lost device.");
+            }
         };
 
         let view = output
@@ -352,7 +360,7 @@ impl State {
     pub fn create_simple_layout(
         &self,
         name: &str,
-        layouts: &[&wgpu::BindGroupLayout],
+        layouts: &[Option<&wgpu::BindGroupLayout>],
     ) -> wgpu::PipelineLayout {
         self.device
             .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {

@@ -59,7 +59,8 @@ impl ApplicationHandler<State> for Engine {
 
         #[cfg(not(target_arch = "wasm32"))]
         {
-            let mut state = pollster::block_on(State::new(window)).unwrap();
+            let mut state =
+                pollster::block_on(State::new(window, event_loop.owned_display_handle())).unwrap();
             // state.pipeline_db.insert(0, Self::basic_pipeline(&state));
             self.program.init(&mut state);
             self.state = Some(state);
