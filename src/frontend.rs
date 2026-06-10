@@ -51,17 +51,21 @@ pub struct DrawKey {
     /// Can be `u32::MAX` to represent nothing.
     /// Up to four materials may be used.
     pub material_ids: [u32; 4],
+    /// The clip rect this object should use. Can `u32::MAX` to represent
+    /// nothing.
+    pub clip_id: u32,
 }
 
 impl DrawKey {
     /// Create a new [`DrawKey`]. You may not use more than four groups.
-    pub fn new(z_index: i32, pipeline_id: u32, groups: &[u32]) -> Self {
+    pub fn new(z_index: i32, clip_id: u32, pipeline_id: u32, groups: &[u32]) -> Self {
         let mut bind_groups = [u32::MAX; 4];
         for (i, &g) in groups.iter().enumerate().take(4) {
             bind_groups[i] = g;
         }
         Self {
             z_index,
+            clip_id,
             pipeline_id,
             material_ids: bind_groups,
         }

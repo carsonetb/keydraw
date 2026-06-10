@@ -68,7 +68,7 @@ impl Program for Game {
 
     fn render(&'_ mut self, _state: &mut State) -> Vec<Command<'_>> {
         vec![Command::Simple(SimpleCommand {
-            key: DrawKey::new(0, self.pipeline_index, &[self.material_index]),
+            key: DrawKey::new(0, u32::MAX, self.pipeline_index, &[self.material_index]),
             vertices: vec![
                 Vertex {
                     position: [200.0, 100.0, 0.0],

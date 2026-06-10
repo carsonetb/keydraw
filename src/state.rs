@@ -37,6 +37,8 @@ pub struct State {
     pipeline_index: u32,
     pub material_db: HashMap<u32, wgpu::BindGroup>,
     material_index: u32,
+    pub clip_db: HashMap<u32, [u32; 4]>,
+    clip_index: u32,
 }
 
 impl State {
@@ -128,6 +130,8 @@ impl State {
             pipeline_index: 0,
             material_db: HashMap::new(),
             material_index: 0,
+            clip_db: HashMap::new(),
+            clip_index: 0,
         })
     }
 
@@ -280,6 +284,7 @@ impl State {
 
             let mut pipeline_id = None;
             let mut material_ids = [u32::MAX; 4];
+            let mut clip_id = None;
 
             for record in &records {
                 match record {
@@ -298,6 +303,17 @@ impl State {
                                 render_pass.set_bind_group(i as u32, material, &[]);
                                 material_ids[i] = target_material;
                             }
+                        }
+
+                        if clip_id != Some(record.key.clip_id) {
+                            if record.key.clip_id == u32::MAX {
+                                let size = self.window.inner_size();
+                                render_pass.set_scissor_rect(0, 0, size.width, size.height);
+                            } else {
+                                let rect = self.clip_db.get(&record.key.clip_id).unwrap();
+                                render_pass.set_scissor_rect(rect[0], rect[1], rect[2], rect[3]);
+                            }
+                            clip_id = Some(record.key.clip_id);
                         }
 
                         render_pass.set_vertex_buffer(
@@ -324,8 +340,11 @@ impl State {
                             self.index_buffer.buffer.slice(..),
                             IndexFormat::Uint16,
                         );
+                        let size = self.window.inner_size();
+                        render_pass.set_scissor_rect(0, 0, size.width, size.height);
                         pipeline_id = None;
                         material_ids = [u32::MAX; 4];
+                        clip_id = None;
                     }
                 }
             }
@@ -353,6 +372,12 @@ impl State {
     pub fn get_material(&mut self) -> u32 {
         let out = self.material_index;
         self.material_index += 1;
+        out
+    }
+
+    pub fn get_clip(&mut self) -> u32 {
+        let out = self.clip_index;
+        self.clip_index += 1;
         out
     }
 

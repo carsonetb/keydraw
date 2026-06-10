@@ -14,7 +14,7 @@ struct GlyphonCommand<'a> {
 
 impl<'a> ComplexCommand for GlyphonCommand<'a> {
     fn key(&self) -> DrawKey {
-        DrawKey::new(self.z_index, u32::MAX, &[])
+        DrawKey::new(self.z_index, u32::MAX, u32::MAX, &[])
     }
 
     fn prepare(&mut self, state: &State) {
